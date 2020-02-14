@@ -1,0 +1,24 @@
+sudo: required
+
+services:
+  - docker
+
+before_install: # build test environment
+  - docker build -t syedrakib/udemy-k8s-complex-client-test -f ./client/Dockerfile.dev ./client
+
+script: # run tests
+  - docker run syedrakib/udemy-k8s-complex-client-test npm test -- --coverage
+
+after_success:
+  # build production docker images
+  - docker build -t syedrakib/udemy-k8s-complex-client ./client
+  - docker build -t syedrakib/udemy-k8s-complex-nginx ./nginx
+  - docker build -t syedrakib/udemy-k8s-complex-server ./server
+  - docker build -t syedrakib/udemy-k8s-complex-worker ./worker
+  # login to docker hub
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # push the built inmages to docker hub
+  - docker push syedrakib/udemy-k8s-complex-client
+  - docker push syedrakib/udemy-k8s-complex-nginx
+  - docker push syedrakib/udemy-k8s-complex-server
+  - docker push syedrakib/udemy-k8s-complex-worker
