@@ -23,15 +23,15 @@ after_success:
   - docker push syedrakib/udemy-k8s-complex-server
   - docker push syedrakib/udemy-k8s-complex-worker
 
-deploy:
-  edge: true # pre-emptive setting to make sure latest (experimental) travis deployment scheme is used
-  provider: elasticbeanstalk
-  region: ap-southeast-1
-  app: udemy-k8s-complex
-  env: UdemyK8sComplex-env
-  bucket_name: elasticbeanstalk-ap-southeast-1-623822791400
-  bucket_path: udemy-k8s-complex
-  on:
-    branch: master
-  access_key_id: $AWS_ACCESS_KEY
-  secret_access_key: $AWS_SECRET_KEY
+# deploy:
+#   edge: true # pre-emptive setting to make sure latest (experimental) travis deployment scheme is used
+#   provider: elasticbeanstalk
+#   region: ap-southeast-1
+#   app: udemy-k8s-complex
+#   env: UdemyK8sComplex-env
+#   bucket_name: elasticbeanstalk-ap-southeast-1-623822791400
+#   bucket_path: udemy-k8s-complex
+#   on:
+#     branch: master
+#   access_key_id: $AWS_ACCESS_KEY
+#   secret_access_key: $AWS_SECRET_KEY
