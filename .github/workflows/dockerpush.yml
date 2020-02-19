@@ -11,6 +11,7 @@ on:
   pull_request:
 env:
   # TODO: Change variable to your image's name.
+  DOCKER_HUB_USERID: ${{ github.actor }}
   IMAGE_NAME: client-test
 jobs:
   # Run tests.
@@ -39,11 +40,28 @@ jobs:
       - uses: actions/checkout@v2
       - name: Build image
         run: docker build -t buildimage -f ./client/Dockerfile.dev ./client
+
       - name: Log in to GitHub registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
       - name: Push image to GitHub registry
         run: |
           IMAGE_ID=docker.pkg.github.com/${{ github.repository }}/$IMAGE_NAME
+          # Strip git ref prefix from version
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+          # Strip "v" prefix from tag name
+          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
+          # Use Docker `latest` tag convention
+          [ "$VERSION" == "master" ] && VERSION=latest
+          echo IMAGE_ID=$IMAGE_ID
+          echo VERSION=$VERSION
+          docker tag buildimage $IMAGE_ID:$VERSION
+          docker push $IMAGE_ID:$VERSION
+
+      - name: Log in to DockerHub
+        run: echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "$DOCKER_HUB_USERID" --password-stdin
+      - name: Push image to DockerHub registry
+        run: |
+          IMAGE_ID=${{ github.repository }}-$IMAGE_NAME
           # Strip git ref prefix from version
           VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
           # Strip "v" prefix from tag name
