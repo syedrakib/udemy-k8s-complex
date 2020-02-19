@@ -1,0 +1,11 @@
+name: Docker Image CI
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build the Docker image for client
+      run: docker build -t syedrakib/udemy-k8s-complex-client-test -f ./client/Dockerfile.dev ./client
+    - name: Run tests on Docker image for client
+      run: docker run syedrakib/udemy-k8s-complex-client-test npm test -- --coverage
