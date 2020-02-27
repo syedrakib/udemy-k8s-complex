@@ -1,0 +1,64 @@
+name: Docker Push CI
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - v*
+  pull_request:
+
+env:
+  DOCKER_HUB_USERID: ${{ github.actor }}
+  REPOSITORY_NAME: udemy-k8s-complex
+  IMAGE_NAME_CLIENT: udemy-k8s-complex-client
+  IMAGE_NAME_NGINX: udemy-k8s-complex-nginx
+  IMAGE_NAME_SERVER: udemy-k8s-complex-server
+  IMAGE_NAME_WORKER: udemy-k8s-complex-worker
+
+jobs:
+
+  prepare:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - name: Print Env Vars
+        run: |
+          echo "docker_hub_userid = $DOCKER_HUB_USERID"
+          echo "repository_name = $REPOSITORY_NAME"
+          echo "image_name_client = $IMAGE_NAME_CLIENT"
+          echo "image_name_nginx = $IMAGE_NAME_NGINX"
+          echo "image_name_server = $IMAGE_NAME_SERVER"
+          echo "image_name_worker = $IMAGE_NAME_WORKER"
+
+  test:
+    needs: prepare
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run tests
+        run: |
+          docker build -t client-test -f ./client/Dockerfile.dev ./client
+          docker run client-test npm test -- --coverage
+
+  push:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build images
+        run: |
+          docker build -t $DOCKER_HUB_USERID/$IMAGE_NAME_CLIENT ./client
+          docker build -t $DOCKER_HUB_USERID/$IMAGE_NAME_NGINX ./nginx
+          docker build -t $DOCKER_HUB_USERID/$IMAGE_NAME_SERVER ./server
+          docker build -t $DOCKER_HUB_USERID/$IMAGE_NAME_WORKER ./worker
+      - name: Log in to DockerHub
+        run: echo "${{ secrets.DOCKER_HUB_PASSWORD }}" | docker login -u "$DOCKER_HUB_USERID" --password-stdin
+      - name: Push images
+        run: |
+          docker push $DOCKER_HUB_USERID/$IMAGE_NAME_CLIENT
+          docker push $DOCKER_HUB_USERID/$IMAGE_NAME_NGINX
+          docker push $DOCKER_HUB_USERID/$IMAGE_NAME_SERVER
+          docker push $DOCKER_HUB_USERID/$IMAGE_NAME_WORKER
